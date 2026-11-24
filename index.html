@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Кулинарная Империя</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Верхняя панель -->
+        <div class="top-bar">
+            <div class="level-info">⚡ LEVEL <span id="level">1</span> • <span id="level-name">УЛИЧНАЯ ТЕЛЕЖКА</span> ⚡</div>
+            <div class="passive-income" id="passive-income">🤖 +0 🪙/сек</div>
+            <div class="currency">
+                <span class="coins">🪙 <span id="coins-count">0</span></span>
+                <span class="crystals">💎 <span id="crystals-count">0</span></span>
+                <span class="reputation">⭐ <span id="reputation-count">0</span></span>
+            </div>
+        </div>
+
+        <!-- Зона тапа -->
+        <div class="tap-zone" id="tap-zone">
+            <div class="food-item" id="food-item">
+                <div class="food-glow"></div>
+                <div class="placeholder-food">🍔</div>
+            </div>
+        </div>
+
+        <!-- Плавающие кнопки -->
+        <button class="orders-btn" id="orders-btn">📦<span class="badge" id="orders-badge">0</span></button>
+        <button class="upgrades-btn" id="upgrades-btn">🚀 АПГРЕЙДЫ</button>
+
+        <!-- Нижняя панель -->
+        <div class="bottom-bar">
+            <div class="energy-bar">
+                <div class="energy-fill" id="energy-fill"></div>
+                <span class="energy-text">
+                    ⚡ <span id="energy-count">1000</span>/<span id="max-energy">1000</span>
+                    <span id="energy-timer" style="font-size: 11px; color: #aaa; margin-left: 8px; font-weight: normal;"></span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Нижнее меню -->
+        <nav class="bottom-menu">
+            <button class="menu-item active" data-tab="home">
+                <span class="icon">🏠</span>
+                <span class="label">Главная</span>
+            </button>
+            <button class="menu-item" data-tab="boost">
+                <span class="icon">🚀</span>
+                <span class="label">Бустер</span>
+            </button>
+            <button class="menu-item" data-tab="tasks">
+                <span class="icon">🎯</span>
+                <span class="label">Задания</span>
+            </button>
+            <button class="menu-item" data-tab="clan">
+                <span class="icon">👥</span>
+                <span class="label">Клан</span>
+            </button>
+            <button class="menu-item" data-tab="profile">
+                <span class="icon">👤</span>
+                <span class="label">Профиль</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Модальное окно апгрейдов -->
+    <div class="modal" id="upgrades-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🚀 АПГРЕЙДЫ</h2>
+                <button class="close-btn" id="close-upgrades">&times;</button>
+            </div>
+            <div class="upgrade-tabs">
+                <button class="tab-btn active" data-tab="active">⚡ Активные</button>
+                <button class="tab-btn" data-tab="passive">🤖 Пассивные</button>
+            </div>
+            <div class="modal-body">
+                <div class="upgrade-list" id="active-upgrades">
+                    <div class="upgrade-item" data-upgrade="laser">
+                        <div class="upgrade-icon">🔪</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Лазерный резак</div>
+                            <div class="upgrade-level">Уровень: <span id="laser-level">0</span></div>
+                            <div class="upgrade-effect" id="laser-effect">+1 монет за тап</div>
+                        </div>
+                        <button class="upgrade-btn" id="laser-btn"><span class="cost" id="laser-cost">100</span> 🪙</button>
+                    </div>
+                    <div class="upgrade-item" data-upgrade="plasma">
+                        <div class="upgrade-icon">🔥</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Плазменный гриль</div>
+                            <div class="upgrade-level">Уровень: <span id="plasma-level">0</span></div>
+                            <div class="upgrade-effect" id="plasma-effect">+2 монеты за тап</div>
+                        </div>
+                        <button class="upgrade-btn" id="plasma-btn"><span class="cost" id="plasma-cost">500</span> 🪙</button>
+                    </div>
+                    <div class="upgrade-item" data-upgrade="cyborg">
+                        <div class="upgrade-icon">🤖</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Киборг-су-шеф</div>
+                            <div class="upgrade-level">Уровень: <span id="cyborg-level">0</span></div>
+                            <div class="upgrade-effect" id="cyborg-effect">+5 монет за тап</div>
+                        </div>
+                        <button class="upgrade-btn" id="cyborg-btn"><span class="cost" id="cyborg-cost">2000</span> 🪙</button>
+                    </div>
+                </div>
+                <div class="upgrade-list" id="passive-upgrades" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно заказов -->
+    <div class="modal" id="orders-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📦 АКТИВНЫЕ ЗАКАЗЫ</h2>
+                <button class="close-btn" id="close-orders">&times;</button>
+            </div>
+            <div class="modal-body" id="orders-list">
+                <div class="empty-orders">Нет активных заказов. Загляните позже!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты по порядку -->
+    <script src="js/game.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/upgrades.js"></script>
+    <script src="js/passive.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/levels.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
