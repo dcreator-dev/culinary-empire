@@ -565,3 +565,42 @@ body {
 .share-btn:active {
     transform: scale(0.95);
 }
+
+/* Адаптация для десктопа (Telegram Desktop, браузер) */
+@media (min-width: 768px) {
+    body {
+        background: #0a0a1a; /* Тёмный фон вокруг игры */
+    }
+
+    #game-container {
+        max-width: 480px;
+        margin: 0 auto; /* Центрируем контейнер */
+        box-shadow: 0 0 40px rgba(0, 212, 255, 0.2); /* Лёгкое свечение */
+        border-left: 1px solid rgba(0, 212, 255, 0.1);
+        border-right: 1px solid rgba(0, 212, 255, 0.1);
+    }
+
+    /* Кнопки остаются на своих местах, но теперь относительно центрированного контейнера */
+    .orders-btn,
+    .upgrades-btn,
+    .share-btn {
+        /* Позиционирование уже правильное, так как они внутри #game-container */
+    }
+}
+
+/* Для очень широких экранов (большие мониторы) */
+@media (min-width: 1200px) {
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    #game-container {
+        height: 90vh; /* Не на весь экран, а 90% высоты */
+        max-height: 900px;
+        border-radius: 20px; /* Скруглённые углы */
+        overflow: hidden;
+    }
+}
