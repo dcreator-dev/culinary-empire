@@ -57,12 +57,28 @@ function createTapEffect(x, y) {
     effect.className = 'tap-effect';
     effect.textContent = `+${getCoinsPerTap()}`;
 
+    // Получаем границы картинки
+    const foodItem = document.getElementById('food-item');
+    const rect = foodItem.getBoundingClientRect();
+
+    // Ограничиваем точку нажатия рамками картинки
+    const clampedX = Math.max(rect.left, Math.min(x, rect.right));
+    const clampedY = Math.max(rect.top, Math.min(y, rect.bottom));
+
+    // Добавляем небольшое случайное смещение для красоты
+    const offsetX = (Math.random() - 0.5) * 30;
+    const offsetY = (Math.random() - 0.5) * 30;
+
+    const finalX = clampedX + offsetX;
+    const finalY = clampedY + offsetY;
+
+    // Случайное направление разлёта
     const angle = Math.random() * Math.PI * 2;
     const distance = 40 + Math.random() * 60;
     const tx = Math.cos(angle) * distance;
 
-    effect.style.left = x + 'px';
-    effect.style.top = y + 'px';
+    effect.style.left = finalX + 'px';
+    effect.style.top = finalY + 'px';
     effect.style.setProperty('--tx', tx + 'px');
 
     document.body.appendChild(effect);

@@ -7,7 +7,18 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    /* Глубокий тёмный цвет основы */
+    background-color: #050510;
+    
+    /* Магия киберпанка: свечение сверху + тонкая сетка */
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
+        linear-gradient(rgba(0, 255, 136, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.04) 1px, transparent 1px);
+        
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    background-position: center top, center center, center center;
+    
     color: #fff;
     overflow: hidden;
     height: 100vh;
@@ -490,18 +501,18 @@ body {
     100% { transform: scale(1); }
 }
 
-/* Адаптация для десктопа (Telegram Desktop, браузер) */
+/* Адаптация для десктопа */
 @media (min-width: 768px) {
-    body {
-        background: #0a0a1a; /* Тёмный фон вокруг игры */
+    body { 
+        background-color: #020205; /* Ещё темнее по краям */
     }
-
     #game-container {
         max-width: 480px;
-        margin: 0 auto; /* Центрируем контейнер */
-        box-shadow: 0 0 40px rgba(0, 212, 255, 0.2); /* Лёгкое свечение */
+        margin: 0 auto;
+        box-shadow: 0 0 50px rgba(0, 212, 255, 0.1);
         border-left: 1px solid rgba(0, 212, 255, 0.1);
         border-right: 1px solid rgba(0, 212, 255, 0.1);
+        background-color: #050510; /* Возвращаем цвет фона внутрь контейнера */
     }
 }
 
@@ -680,3 +691,45 @@ body {
     40% { transform: scale(0.85); }
     100% { transform: scale(1); }
 }  
+
+/* Виньетка (затемнение краёв) для фокуса на центре */
+#game-container::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+    pointer-events: none; /* Чтобы клики проходили сквозь неё */
+    z-index: 0;
+    border-radius: inherit;
+}
+
+/* Убедимся, что весь контент лежит ПОВИНЬЕ виньетки */
+#game-container > * {
+    position: relative;
+    z-index: 1;
+}
+/* Улучшенные цифры при тапе */
+.tap-effect {
+    position: absolute;
+    font-size: 36px;
+    font-weight: bold;
+    color: #00d4ff;
+    text-shadow: 
+        0 0 10px rgba(0, 212, 255, 0.8),
+        0 0 20px rgba(0, 212, 255, 0.6),
+        0 0 30px rgba(0, 212, 255, 0.4);
+    pointer-events: none;
+    animation: floatUp 0.8s ease-out forwards;
+    z-index: 100;
+}
+
+@keyframes floatUp {
+    0% { 
+        opacity: 1; 
+        transform: translate(0, 0) scale(1); 
+    }
+    100% { 
+        opacity: 0; 
+        transform: translate(var(--tx), -120px) scale(1.8); 
+    }
+}
