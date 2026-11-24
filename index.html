@@ -58,14 +58,33 @@
             </div>
         </div>
 
-        <!-- Вкладка 5: Профиль (Друзья и статистика) -->
+        <!-- Вкладка 5: Профиль -->
         <div id="tab-profile" class="tab-content">
             <div class="tab-header">👤 ПРОФИЛЬ</div>
             <div class="tab-body">
                 <div class="stat-box">
-                    <div>Всего тапов: <span id="stat-taps">0</span></div>
-                    <div>Уровень: <span id="stat-level">1</span></div>
+                    <div>Всего тапов: <span id="stat-taps" style="color:#00d4ff">0</span></div>
+                    <div>Текущий уровень: <span id="stat-level" style="color:#ffd700">1</span></div>
                 </div>
+
+                <!-- Блок прогресса кухни -->
+                <div class="stat-box" style="border: 1px solid rgba(0, 212, 255, 0.3);">
+                    <div style="font-size: 14px; color: #aaa; margin-bottom: 5px;">Текущая кухня:</div>
+                    <div id="current-kitchen-name" style="font-size: 18px; font-weight: bold; color: #00d4ff; margin-bottom: 15px;">УЛИЧНАЯ ТЕЛЕЖКА</div>
+                    
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; color: #ccc;">
+                        <span>Репутация: <span id="current-rep">0</span> ⭐</span>
+                        <span>Цель: <span id="required-rep">50</span> ⭐</span>
+                    </div>
+                    
+                    <div class="progress-bar-mini" style="margin: 10px 0; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+                        <div id="kitchen-progress-fill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #ffd700, #ff8c00); transition: width 0.5s ease;"></div>
+                    </div>
+                    
+                    <button class="action-btn" id="unlock-kitchen-btn" disabled>Открыть следующую кухню</button>
+                    <div id="max-kitchen-msg" style="display: none; color: #00ff88; font-weight: bold; margin-top: 10px; text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);">🏆 Вы достигли вершины кулинарии!</div>
+                </div>
+
                 <button class="action-btn share-action" id="share-btn">🎁 Пригласить друга (+500 🪙)</button>
             </div>
         </div>

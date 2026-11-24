@@ -1,39 +1,33 @@
-function getCurrentKitchenLevel() {
-    let currentLevel = KITCHEN_LEVELS[0];
-    for (const level of KITCHEN_LEVELS) {
-        if (gameState.reputation >= level.repRequired) {
-            currentLevel = level;
-        } else {
-            break;
-        }
-    }
-    return currentLevel;
+// Уровни кухни и ручное открытие
+
+function getCurrentKitchenData() {
+    return KITCHEN_LEVELS.find(l => l.level === gameState.level) || KITCHEN_LEVELS[0];
 }
 
-function updateKitchenVisuals(level) {
+function updateKitchenVisuals(levelData) {
     const levelNameEl = document.getElementById('level-name');
-    if (levelNameEl) levelNameEl.textContent = level.name;
+    if (levelNameEl) levelNameEl.textContent = levelData.name;
 
     const levelEl = document.getElementById('level');
-    if (levelEl) levelEl.textContent = level.level;
+    if (levelEl) levelEl.textContent = levelData.level;
 
     const foodEl = document.querySelector('.placeholder-food');
-    if (foodEl) foodEl.textContent = level.food;
+    if (foodEl) foodEl.textContent = levelData.food;
 }
 
-function showLevelUpAnimation(oldLevel, newLevel) {
+function showLevelUpAnimation(oldLevel, newLevelData) {
     const modal = document.createElement('div');
     modal.className = 'level-up-modal';
     modal.innerHTML = `
         <div class="level-up-content">
-            <div class="level-up-badge">🎉 НОВЫЙ УРОВЕНЬ!</div>
+            <div class="level-up-badge">🎉 НОВАЯ КУХНЯ ОТКРЫТА!</div>
             <div class="level-up-numbers">
                 <span class="old-level">${oldLevel}</span>
                 <span class="arrow">→</span>
-                <span class="new-level">${newLevel.level}</span>
+                <span class="new-level">${newLevelData.level}</span>
             </div>
-            <div class="level-up-name">${newLevel.name}</div>
-            <div class="level-up-food">${newLevel.food}</div>
+            <div class="level-up-name">${newLevelData.name}</div>
+            <div class="level-up-food">${newLevelData.food}</div>
             <button class="level-up-btn" id="close-level-up">Отлично!</button>
         </div>
     `;
@@ -47,13 +41,70 @@ function showLevelUpAnimation(oldLevel, newLevel) {
     });
 }
 
-function checkLevelUp() {
-    const currentLevel = getCurrentKitchenLevel();
-    if (currentLevel.level !== gameState.level) {
+function renderKitchenProgress() {
+    const currentData = getCurrentKitchenData();
+    const nextData = KITCHEN_LEVELS.find(l => l.level === gameState.level + 1);
+
+    const nameEl = document.getElementById('current-kitchen-name');
+    const currentRepEl = document.getElementById('current-rep');
+    const requiredRepEl = document.getElementById('required-rep');
+    const progressFill = document.getElementById('kitchen-progress-fill');
+    const unlockBtn = document.getElementById('unlock-kitchen-btn');
+    const maxMsg = document.getElementById('max-kitchen-msg');
+    const statLevelEl = document.getElementById('stat-level');
+
+    if (nameEl) nameEl.textContent = currentData.name;
+    if (currentRepEl) currentRepEl.textContent = gameState.reputation;
+    if (statLevelEl) statLevelEl.textContent = gameState.level;
+
+    if (nextData) {
+        const req = nextData.repRequired;
+        if (requiredRepEl) requiredRepEl.textContent = req;
+
+        const pct = Math.min(100, (gameState.reputation / req) * 100);
+        if (progressFill) progressFill.style.width = pct + '%';
+
+        if (unlockBtn) {
+            if (gameState.reputation >= req) {
+                unlockBtn.disabled = false;
+                unlockBtn.textContent = `🔓 Открыть: ${nextData.name}`;
+            } else {
+                unlockBtn.disabled = true;
+                unlockBtn.textContent = `Нужно ещё ${req - gameState.reputation} ⭐`;
+            }
+        }
+        if (maxMsg) maxMsg.style.display = 'none';
+        if (unlockBtn) unlockBtn.style.display = 'block';
+    } else {
+        if (requiredRepEl) requiredRepEl.textContent = 'MAX';
+        if (progressFill) progressFill.style.width = '100%';
+        if (unlockBtn) unlockBtn.style.display = 'none';
+        if (maxMsg) maxMsg.style.display = 'block';
+    }
+}
+
+function tryUnlockNextKitchen() {
+    const nextData = KITCHEN_LEVELS.find(l => l.level === gameState.level + 1);
+    
+    if (!nextData) return;
+
+    if (gameState.reputation >= nextData.repRequired) {
         const oldLevel = gameState.level;
-        gameState.level = currentLevel.level;
-        updateKitchenVisuals(currentLevel);
-        showLevelUpAnimation(oldLevel, currentLevel);
+        gameState.level = nextData.level;
+        
+        updateKitchenVisuals(nextData);
+        showLevelUpAnimation(oldLevel, nextData);
+        
         saveGame();
+        renderKitchenProgress();
+        updateUI();
+        
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+    } else {
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+        }
     }
 }

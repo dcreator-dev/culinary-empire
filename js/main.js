@@ -1,34 +1,23 @@
 // Telegram
 const tg = window.Telegram.WebApp || { expand: () => {} };
 if (tg.expand) tg.expand();
-// --- Telegram: применяем тему пользователя ---
+
+let lastEnergyRegen = Date.now();
+
+// Инициализация Telegram
+if (tg.initDataUnsafe?.user) {
+    console.log('👤 Пользователь:', tg.initDataUnsafe.user.first_name);
+} else {
+    console.log('⚠️ Запущено вне Telegram');
+}
+
 if (tg.colorScheme) {
     document.body.style.background = tg.themeParams.bg_color 
         ? tg.themeParams.bg_color 
         : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)';
 }
-let lastEnergyRegen = Date.now();
-// Сообщаем Telegram, что приложение готово
+
 tg.ready();
-
-// --- Telegram: получаем имя пользователя ---
-const tgUser = tg.initDataUnsafe?.user;
-if (tgUser) {
-    console.log('👤 Пользователь Telegram:', tgUser.first_name, tgUser.username);
-    
-    // Персонализируем приветствие
-    const levelInfo = document.querySelector('.level-info');
-    if (levelInfo && tgUser.first_name) {
-        levelInfo.innerHTML = `⚡ LEVEL <span id="level">1</span> • <span id="level-name">УЛИЧНАЯ ТЕЛЕЖКА</span> ⚡<br><span style="font-size:12px; color:#aaa;">Привет, ${tgUser.first_name}! 👋</span>`;
-    }
-} else {
-    console.log('⚠️ Запущено вне Telegram');
-}
-
-// --- Telegram: включаем Haptic Feedback ---
-if (tg.HapticFeedback) {
-    console.log('✅ Haptic Feedback доступен');
-}
 
 function updateUI() {
     setText('coins-count', formatNumber(gameState.coins));
@@ -37,13 +26,18 @@ function updateUI() {
     setText('energy-count', formatNumber(Math.floor(gameState.energy)));
     setText('max-energy', formatNumber(gameState.maxEnergy));
     setText('level', gameState.level);
+    setText('stat-taps', formatNumber(gameState.totalTaps));
+    setText('stat-level', gameState.level);
 
     const fill = document.getElementById('energy-fill');
     if (fill) {
         const pct = (gameState.energy / gameState.maxEnergy) * 100;
         fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
     }
-    // Таймер восстановления — компактно, внутри шкалы, без переноса
+
+    updatePassiveIndicator();
+
+    // Таймер энергии
     const energyTimerEl = document.getElementById('energy-timer');
     if (energyTimerEl) {
         if (gameState.energy >= gameState.maxEnergy) {
@@ -56,9 +50,6 @@ function updateUI() {
             energyTimerEl.style.color = '#ffd700';
         }
     }
-
-    updatePassiveIndicator();
-    checkLevelUp();
 }
 
 function createTapEffect(x, y) {
@@ -81,34 +72,33 @@ function createTapEffect(x, y) {
 function init() {
     loadGame();
 
-    const initialLevel = getCurrentKitchenLevel();
+    const initialLevel = getCurrentKitchenData();
     updateKitchenVisuals(initialLevel);
 
     updateUI();
     updateUpgradeButtons();
-    updateOrdersUI(); // Инициализируем заказы
+    renderOrdersInTab();
+    renderKitchenProgress();
 
     // === 1. ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
     document.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', () => {
-            // Убираем активный класс у всех кнопок
             document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-            // Добавляем нажатой
             item.classList.add('active');
 
-            // Скрываем все вкладки
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             
-            // Показываем нужную
             const tabId = `tab-${item.dataset.tab}`;
             const targetTab = document.getElementById(tabId);
             if (targetTab) {
                 targetTab.classList.add('active');
             }
 
-            // Если открыли задания, обновляем список заказов
             if (item.dataset.tab === 'tasks') {
                 renderOrdersInTab();
+            }
+            if (item.dataset.tab === 'profile') {
+                renderKitchenProgress();
             }
         });
     });
@@ -150,7 +140,7 @@ function init() {
         });
     }
 
-    // === 3. МОДАЛКА АПГРЕЙДОВ (из вкладки Бустер) ===
+    // === 3. МОДАЛКА АПГРЕЙДОВ ===
     const openUpgradesBtn = document.getElementById('open-upgrades-btn');
     const upgradesModal = document.getElementById('upgrades-modal');
     const closeUpgrades = document.getElementById('close-upgrades');
@@ -168,7 +158,6 @@ function init() {
         upgradesModal.addEventListener('click', (e) => {
             if (e.target === upgradesModal) upgradesModal.classList.remove('active');
         });
-        // Делегирование для покупки
         upgradesModal.addEventListener('click', (e) => {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -193,7 +182,7 @@ function init() {
         });
     });
 
-    // === 4. КНОПКА "ПРИГЛАСИТЬ ДРУГА" (из вкладки Профиль) ===
+    // === 4. КНОПКА "ПРИГЛАСИТЬ ДРУГА" ===
     const shareBtn = document.getElementById('share-btn');
     if (shareBtn) {
         shareBtn.addEventListener('click', () => {
@@ -212,7 +201,15 @@ function init() {
         });
     }
 
-    // === 5. ИГРОВОЙ ЦИКЛ ===
+    // === 5. КНОПКА ОТКРЫТИЯ КУХНИ ===
+    const unlockKitchenBtn = document.getElementById('unlock-kitchen-btn');
+    if (unlockKitchenBtn) {
+        unlockKitchenBtn.addEventListener('click', () => {
+            tryUnlockNextKitchen();
+        });
+    }
+
+    // === 6. ИГРОВОЙ ЦИКЛ ===
     setInterval(() => {
         const now = Date.now();
         const income = getPassiveIncome();
@@ -238,7 +235,7 @@ function init() {
     }
 
     window.addEventListener('beforeunload', saveGame);
-    console.log('✅ Игра инициализирована (Чистый UI)');
+    console.log('✅ Игра инициализирована');
 }
 
 if (document.readyState === 'loading') {
