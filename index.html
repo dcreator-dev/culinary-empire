@@ -85,7 +85,22 @@
                     <div id="max-kitchen-msg" style="display: none; color: #00ff88; font-weight: bold; margin-top: 10px; text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);">🏆 Вы достигли вершины кулинарии!</div>
                 </div>
 
-                <button class="action-btn share-action" id="share-btn">🎁 Пригласить друга (+500 🪙)</button>
+                <!-- Ежедневный бонус -->
+                <div class="stat-box daily-bonus-box">
+                    <div style="font-size: 16px; font-weight: bold; color: #ff6b35; margin-bottom: 10px;">🎁 Ежедневная награда</div>
+                    <div id="daily-bonus-status" style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Заходите каждый день и получайте бонусы!</div>
+                    <button class="action-btn daily-btn" id="claim-daily-btn">Забрать награду</button>
+                </div>
+
+                <!-- Реферальная программа -->
+                <div class="stat-box referral-box">
+                    <div style="font-size: 16px; font-weight: bold; color: #00ff88; margin-bottom: 10px;">👥 Приглашай друзей</div>
+                    <div style="font-size: 13px; color: #ccc; margin-bottom: 10px;">
+                        Пригласил: <span id="referral-count" style="color:#00ff88; font-weight:bold">0</span> друзей<br>
+                        Заработано: <span id="referral-earned" style="color:#ffd700; font-weight:bold">0</span> 🪙
+                    </div>
+                    <button class="action-btn share-action" id="share-btn">🎁 Пригласить друга (+500 🪙)</button>
+                </div>
             </div>
         </div>
 
@@ -168,7 +183,52 @@
             </div>
         </div>
     </div>
+    <!-- Модальное окно магазина -->
+    <div class="modal" id="shop-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🛒 МАГАЗИН</h2>
+                <button class="close-btn" id="close-shop">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="shop-item" data-product="coins_small">
+                    <div class="shop-icon">🪙</div>
+                    <div class="shop-info">
+                        <div class="shop-name">Пакет "Старт"</div>
+                        <div class="shop-desc">5 000 монет</div>
+                    </div>
+                    <button class="shop-btn">50 ⭐</button>
+                </div>
 
+                <div class="shop-item" data-product="coins_large">
+                    <div class="shop-icon">🪙</div>
+                    <div class="shop-info">
+                        <div class="shop-name">Пакет "Босс"</div>
+                        <div class="shop-desc">20 000 монет</div>
+                    </div>
+                    <button class="shop-btn">150 ⭐</button>
+                </div>
+
+                <div class="shop-item" data-product="crystals">
+                    <div class="shop-icon">💎</div>
+                    <div class="shop-info">
+                        <div class="shop-name">Кристаллы</div>
+                        <div class="shop-desc">10 кристаллов</div>
+                    </div>
+                    <button class="shop-btn">100 ⭐</button>
+                </div>
+
+                <div class="shop-item" data-product="vip">
+                    <div class="shop-icon">⚡</div>
+                    <div class="shop-info">
+                        <div class="shop-name">VIP на 24 часа</div>
+                        <div class="shop-desc">x2 ко всем доходам</div>
+                    </div>
+                    <button class="shop-btn">200 ⭐</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Скрипты -->
     <script src="js/game.js"></script>
     <script src="js/audio.js"></script>

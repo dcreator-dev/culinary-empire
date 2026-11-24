@@ -733,3 +733,93 @@ body {
         transform: translate(var(--tx), -120px) scale(1.8); 
     }
 }
+
+/* Стили магазина */
+.shop-action {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%) !important;
+    color: #1a1a2e !important;
+    margin-bottom: 10px;
+}
+
+.shop-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    transition: all 0.3s;
+}
+
+.shop-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+.shop-icon {
+    font-size: 40px;
+    width: 50px;
+    text-align: center;
+}
+
+.shop-info {
+    flex: 1;
+}
+
+.shop-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 5px;
+}
+
+.shop-desc {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.shop-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    border: none;
+    border-radius: 10px;
+    color: #1a1a2e;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.shop-btn:active {
+    transform: scale(0.95);
+}
+
+/* Ежедневный бонус */
+.daily-bonus-box {
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+.daily-btn {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+    color: #fff !important;
+}
+
+.daily-btn:disabled {
+    background: #333 !important;
+    color: #666 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.daily-btn:not(:disabled) {
+    animation: glow-pulse-active 1.5s ease-in-out infinite;
+}
+
+/* Реферальная программа */
+.referral-box {
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+}

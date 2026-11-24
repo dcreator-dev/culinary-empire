@@ -50,6 +50,15 @@ function updateUI() {
             energyTimerEl.style.color = '#ffd700';
         }
     }
+        // Обновляем статистику рефералов
+    const referralCountEl = document.getElementById('referral-count');
+    const referralEarnedEl = document.getElementById('referral-earned');
+    if (referralCountEl && gameState.referrals) {
+        referralCountEl.textContent = gameState.referrals.count;
+    }
+    if (referralEarnedEl && gameState.referrals) {
+        referralEarnedEl.textContent = formatNumber(gameState.referrals.earned);
+    }
 }
 
 function createTapEffect(x, y) {
@@ -198,24 +207,45 @@ function init() {
         });
     });
 
-    // === 4. КНОПКА "ПРИГЛАСИТЬ ДРУГА" ===
+        // === 4. КНОПКА "ПРИГЛАСИТЬ ДРУГА" (только генерация ссылки) ===
     const shareBtn = document.getElementById('share-btn');
+    const referralCountEl = document.getElementById('referral-count');
+    const referralEarnedEl = document.getElementById('referral-earned');
+    
+    // Инициализация реферальных данных
+    if (!gameState.referrals) {
+        gameState.referrals = {
+            count: 0,
+            earned: 0
+        };
+    }
+    
+    function updateReferralStats() {
+        if (referralCountEl) referralCountEl.textContent = gameState.referrals.count;
+        if (referralEarnedEl) referralEarnedEl.textContent = formatNumber(gameState.referrals.earned);
+    }
+    
     if (shareBtn) {
         shareBtn.addEventListener('click', () => {
             const userId = tg.initDataUnsafe?.user?.id || '0';
+            const userName = tg.initDataUnsafe?.user?.first_name || 'Друг';
+            
             const shareText = `🍔 Я уже построил Кулинарную Империю уровня ${gameState.level}! Присоединяйся и получи бонус:`;
             const shareLink = `https://t.me/culinaryempire_bot?start=ref_${userId}`;
             
             tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`);
             
-            gameState.coins += 500;
-            showToast('🎁 Ссылка отправлена! +500 🪙 за активность');
-            updateUI();
-            saveGame();
+            // ❌ НЕ начисляем монеты за клик! Только за реального друга.
+            showToast('🎁 Ссылка скопирована! Отправь её другу.');
             
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
         });
     }
+    
+    // Обновляем статистику при загрузке
+    updateReferralStats();
 
     // === 5. КНОПКА ОТКРЫТИЯ КУХНИ ===
     const unlockKitchenBtn = document.getElementById('unlock-kitchen-btn');
@@ -243,6 +273,132 @@ function init() {
         }
         updateUI();
     }, 100);
+
+        // === 7. МАГАЗИН STARS ===
+    const shopBtn = document.getElementById('shop-btn');
+    const shopModal = document.getElementById('shop-modal');
+    const closeShop = document.getElementById('close-shop');
+
+    if (shopBtn) {
+        shopBtn.addEventListener('click', () => {
+            shopModal.classList.add('active');
+        });
+    }
+
+    if (closeShop) {
+        closeShop.addEventListener('click', () => shopModal.classList.remove('active'));
+    }
+
+    if (shopModal) {
+        shopModal.addEventListener('click', (e) => {
+            if (e.target === shopModal) shopModal.classList.remove('active');
+        });
+
+        // Обработка покупок
+        shopModal.addEventListener('click', (e) => {
+            const btn = e.target.closest('.shop-btn');
+            if (!btn) return;
+
+            const item = btn.closest('.shop-item');
+            const product = item.getAttribute('data-product');
+
+            // Здесь будет отправка инвойса через Telegram Stars API
+            // Пока просто показываем уведомление
+            showToast(`🛒 Покупка: ${product}. Stars API в разработке.`);
+            
+            // TODO: Здесь будет реальный вызов tg.sendInvoice()
+            // Пример:
+            // if (product === 'coins_small') {
+            //     sendStarsInvoice(50, '5000 монет', 'coins_small');
+            // }
+        });
+    }
+
+        // === 8. ЕЖЕДНЕВНЫЕ БОНУСЫ ===
+    const claimDailyBtn = document.getElementById('claim-daily-btn');
+    const dailyStatus = document.getElementById('daily-bonus-status');
+    
+    // Массив наград по дням (7 дней подряд)
+    const DAILY_REWARDS = [
+        { day: 1, coins: 500,  text: 'День 1: +500 🪙' },
+        { day: 2, coins: 1000, text: 'День 2: +1000 🪙' },
+        { day: 3, coins: 2000, text: 'День 3: +2000 🪙' },
+        { day: 4, coins: 3000, text: 'День 4: +3000 🪙' },
+        { day: 5, coins: 5000, text: 'День 5: +5000 🪙' },
+        { day: 6, coins: 7500, text: 'День 6: +7500 🪙' },
+        { day: 7, coins: 10000, text: 'День 7: +10000 🪙 🎉' }
+    ];
+    
+    // Инициализация ежедневных данных
+    if (!gameState.dailyBonus) {
+        gameState.dailyBonus = {
+            lastClaimDate: null,
+            streak: 0,
+            totalEarned: 0
+        };
+    }
+    
+    function checkDailyStatus() {
+        const today = new Date().toDateString();
+        const lastClaim = gameState.dailyBonus.lastClaimDate;
+        
+        if (lastClaim === today) {
+            // Уже забрал сегодня
+            claimDailyBtn.disabled = true;
+            claimDailyBtn.textContent = '✅ Уже забрал';
+            dailyStatus.textContent = `Серия: ${gameState.dailyBonus.streak} дней подряд`;
+        } else {
+            // Можно забрать
+            claimDailyBtn.disabled = false;
+            const nextDay = Math.min(gameState.dailyBonus.streak + 1, 7);
+            claimDailyBtn.textContent = `Забрать награду (День ${nextDay})`;
+            dailyStatus.textContent = `Серия: ${gameState.dailyBonus.streak} дней подряд`;
+        }
+    }
+    
+    if (claimDailyBtn) {
+        claimDailyBtn.addEventListener('click', () => {
+            const today = new Date().toDateString();
+            const lastClaim = gameState.dailyBonus.lastClaimDate;
+            
+            if (lastClaim === today) {
+                showToast('⏰ Награда уже получена сегодня!', 'error');
+                return;
+            }
+            
+            // Проверяем, был ли вчерашний день
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toDateString();
+            
+            if (lastClaim === yesterdayStr) {
+                // Продолжаем серию
+                gameState.dailyBonus.streak = Math.min(gameState.dailyBonus.streak + 1, 7);
+            } else {
+                // Начинаем новую серию
+                gameState.dailyBonus.streak = 1;
+            }
+            
+            // Начисляем награду
+            const reward = DAILY_REWARDS[gameState.dailyBonus.streak - 1];
+            gameState.coins += reward.coins;
+            gameState.dailyBonus.totalEarned += reward.coins;
+            gameState.dailyBonus.lastClaimDate = today;
+            
+            showToast(`🎉 ${reward.text}! Серия: ${gameState.dailyBonus.streak} дней`);
+            updateUI();
+            checkDailyStatus();
+            saveGame();
+            
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        });
+    }
+    
+    // Проверяем статус при загрузке
+    checkDailyStatus();    
+    updateReferralStats();
 
     // Цикл заказов
     startOrdersLoop();
