@@ -43,6 +43,7 @@ function updateUI() {
         const pct = (gameState.energy / gameState.maxEnergy) * 100;
         fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
     }
+    // Таймер восстановления — компактно, внутри шкалы, без переноса
     const energyTimerEl = document.getElementById('energy-timer');
     if (energyTimerEl) {
         if (gameState.energy >= gameState.maxEnergy) {
@@ -50,8 +51,8 @@ function updateUI() {
             energyTimerEl.style.color = '#00ff88';
         } else {
             const now = Date.now();
-            const timeLeft = Math.max(0, 1 - ((now - lastEnergyRegen) / 1000)).toFixed(1);
-            energyTimerEl.textContent = `(+1 через ${timeLeft}с)`;
+            const timeLeft = Math.max(0, 1 - ((now - lastEnergyRegen) / 1000));
+            energyTimerEl.textContent = `(+1 ${timeLeft.toFixed(1)}с)`;
             energyTimerEl.style.color = '#ffd700';
         }
     }
@@ -230,10 +231,10 @@ function init() {
     });
 
     // Пассивный доход
-    // Игровой цикл: пассивный доход и восстановление энергии (проверяем каждые 100мс для плавности)
+    // Игровой цикл: пассивный доход + восстановление энергии
     setInterval(() => {
         const now = Date.now();
-        
+
         // 1. Пассивный доход (раз в секунду)
         const income = getPassiveIncome();
         if (income > 0 && now - (gameState._lastPassiveIncome || 0) >= 1000) {
@@ -242,10 +243,14 @@ function init() {
         }
 
         // 2. Восстановление энергии (1 ед. в секунду)
-        if (gameState.energy < gameState.maxEnergy && (now - lastEnergyRegen) >= 1000) {
+        if (gameState.energy >= gameState.maxEnergy) {
+            // Энергия полна — держим «якорь» актуальным,
+            // чтобы после первого тапа таймер показал честную 1.0с, а не 0.0с
+            lastEnergyRegen = now;
+        } else if (now - lastEnergyRegen >= 1000) {
             gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
             lastEnergyRegen = now;
-            saveGame(); // Сохраняем при восстановлении
+            saveGame();
         }
 
         // Обновляем UI каждый тик (для плавного таймера)
@@ -266,6 +271,32 @@ function init() {
     window.addEventListener('beforeunload', saveGame);
 
     console.log('✅ Игра инициализирована');
+
+    // --- Кнопка "Пригласить друга" ---
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            const userId = tg.initDataUnsafe?.user?.id || '0';
+            const userName = tg.initDataUnsafe?.user?.first_name || 'Друг';
+            
+            const shareText = `🍔 Я уже построил Кулинарную Империю уровня ${gameState.level}! Присоединяйся и получи бонус:`;
+            const shareLink = `https://t.me/culinaryempire_bot?start=ref_${userId}`;
+            
+            // Открываем нативное окно "Поделиться" в Telegram
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`);
+            
+            // Даём небольшой бонус за сам факт попытки приглашения (мотивация!)
+            gameState.coins += 500;
+            showToast('🎁 Ссылка отправлена! +500 🪙 за активность');
+            
+            updateUI();
+            saveGame();
+            
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        });
+    }    
 }
 
 if (document.readyState === 'loading') {
