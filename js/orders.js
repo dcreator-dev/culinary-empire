@@ -109,3 +109,56 @@ function startOrdersLoop() {
 
     setInterval(() => generateOrder(), 30000);
 }
+// Рендер заказов специально для вкладки "Задания"
+function renderOrdersInTab() {
+    const list = document.getElementById('tasks-orders-list');
+    const badge = document.getElementById('tasks-badge');
+
+    if (!list) return;
+
+    // Обновляем бейдж на нижней панели
+    if (badge) {
+        if (gameState.orders.length > 0) {
+            badge.textContent = gameState.orders.length;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    if (gameState.orders.length === 0) {
+        list.innerHTML = '<div class="empty-state">Нет активных заказов. Ожидайте...</div>';
+        return;
+    }
+
+    list.innerHTML = gameState.orders.map(order => {
+        const isUrgent = order.timeLeft <= 10;
+        const minutes = Math.floor(order.timeLeft / 60);
+        const seconds = order.timeLeft % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        return `
+            <div class="order-item ${isUrgent ? 'urgent' : ''}" data-order-id="${order.id}">
+                <div class="order-icon">${order.dishIcon}</div>
+                <div class="order-info">
+                    <div class="order-name">${order.dishName}</div>
+                    <div class="order-reward">+${formatNumber(order.reward)} 🪙  +${order.repReward} ⭐</div>
+                    <div class="order-timer ${isUrgent ? 'urgent' : ''}">⏱️ ${timeStr}</div>
+                </div>
+                <button class="order-btn" data-complete="${order.id}">Готовить</button>
+            </div>
+        `;
+    }).join('');
+
+    // Делегирование клика по кнопке "Готовить" внутри вкладки
+    list.querySelectorAll('.order-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const orderId = parseFloat(e.target.getAttribute('data-complete'));
+            if (orderId) {
+                completeOrder(orderId);
+                renderOrdersInTab(); // Перерисовываем список сразу
+                updateUI();
+            }
+        });
+    });
+}

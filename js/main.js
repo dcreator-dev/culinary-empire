@@ -86,20 +86,40 @@ function init() {
 
     updateUI();
     updateUpgradeButtons();
+    updateOrdersUI(); // Инициализируем заказы
 
-    // Тап по зоне еды
-    const tapZone = document.getElementById('tap-zone');
-    const foodItem = document.getElementById('food-item');
+    // === 1. ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            // Убираем активный класс у всех кнопок
+            document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+            // Добавляем нажатой
+            item.classList.add('active');
 
-    if (tapZone) {
-    // Тап по зоне еды (используем pointerdown для мгновенной реакции на мобильных)
+            // Скрываем все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            
+            // Показываем нужную
+            const tabId = `tab-${item.dataset.tab}`;
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            // Если открыли задания, обновляем список заказов
+            if (item.dataset.tab === 'tasks') {
+                renderOrdersInTab();
+            }
+        });
+    });
+
+    // === 2. ОБРАБОТЧИК ТАПА ===
     const tapZone = document.getElementById('tap-zone');
     const foodItem = document.getElementById('food-item');
 
     if (tapZone) {
         tapZone.addEventListener('pointerdown', (e) => {
-            e.preventDefault(); // Предотвращаем зум и выделение
-
+            e.preventDefault();
             if (gameState.energy <= 0) {
                 showToast('Энергия закончилась!', 'error');
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
@@ -112,20 +132,14 @@ function init() {
             gameState.totalTaps += 1;
 
             playTapSound();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 
-            // Вибрация при тапе (теперь сработает гарантированно)
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
-
-            // Исправление "залипания" анимации: сбрасываем класс и запускаем заново
             if (foodItem) {
                 foodItem.classList.remove('tapped');
-                void foodItem.offsetWidth; // Магия: принудительный reflow браузера
+                void foodItem.offsetWidth; 
                 foodItem.classList.add('tapped');
             }
 
-            // Эффект вылетающих цифр
             for (let i = 0; i < 3; i++) {
                 setTimeout(() => createTapEffect(e.clientX || e.pageX, e.clientY || e.pageY), i * 60);
             }
@@ -135,15 +149,14 @@ function init() {
             saveGame();
         });
     }
-    }
 
-    // Модалка апгрейдов
-    const upgradesBtn = document.getElementById('upgrades-btn');
+    // === 3. МОДАЛКА АПГРЕЙДОВ (из вкладки Бустер) ===
+    const openUpgradesBtn = document.getElementById('open-upgrades-btn');
     const upgradesModal = document.getElementById('upgrades-modal');
     const closeUpgrades = document.getElementById('close-upgrades');
 
-    if (upgradesBtn) {
-        upgradesBtn.addEventListener('click', () => {
+    if (openUpgradesBtn) {
+        openUpgradesBtn.addEventListener('click', () => {
             upgradesModal.classList.add('active');
             updateUpgradeButtons();
         });
@@ -155,15 +168,12 @@ function init() {
         upgradesModal.addEventListener('click', (e) => {
             if (e.target === upgradesModal) upgradesModal.classList.remove('active');
         });
-
-        // Делегирование для активных апгрейдов
+        // Делегирование для покупки
         upgradesModal.addEventListener('click', (e) => {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
-
             const item = btn.closest('.upgrade-item');
             if (!item) return;
-
             const key = item.getAttribute('data-upgrade');
             if (key && UPGRADES_CONFIG[key]) {
                 buyUpgrade(key);
@@ -171,132 +181,64 @@ function init() {
         });
     }
 
-    // Переключение вкладок апгрейдов
+    // Переключение внутри модалки апгрейдов
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
             const tab = btn.getAttribute('data-tab');
-            const activeList = document.getElementById('active-upgrades');
-            const passiveList = document.getElementById('passive-upgrades');
-
-            if (tab === 'active') {
-                activeList.style.display = 'block';
-                passiveList.style.display = 'none';
-            } else {
-                activeList.style.display = 'none';
-                passiveList.style.display = 'block';
-                updatePassiveUpgradesUI();
-            }
+            document.getElementById('active-upgrades').style.display = tab === 'active' ? 'block' : 'none';
+            document.getElementById('passive-upgrades').style.display = tab === 'passive' ? 'block' : 'none';
+            if (tab === 'passive') updatePassiveUpgradesUI();
         });
     });
 
-    // Модалка заказов
-    const ordersBtn = document.getElementById('orders-btn');
-    const ordersModal = document.getElementById('orders-modal');
-    const closeOrders = document.getElementById('close-orders');
-
-    if (ordersBtn) {
-        ordersBtn.addEventListener('click', () => {
-            ordersModal.classList.add('active');
-            updateOrdersUI();
-        });
-    }
-    if (closeOrders) {
-        closeOrders.addEventListener('click', () => ordersModal.classList.remove('active'));
-    }
-    if (ordersModal) {
-        ordersModal.addEventListener('click', (e) => {
-            if (e.target === ordersModal) ordersModal.classList.remove('active');
-        });
-
-        ordersModal.addEventListener('click', (e) => {
-            const btn = e.target.closest('.order-btn');
-            if (!btn) return;
-
-            const orderId = parseFloat(btn.getAttribute('data-complete'));
-            if (orderId) {
-                completeOrder(orderId);
-            }
+    // === 4. КНОПКА "ПРИГЛАСИТЬ ДРУГА" (из вкладки Профиль) ===
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            const userId = tg.initDataUnsafe?.user?.id || '0';
+            const shareText = `🍔 Я уже построил Кулинарную Империю уровня ${gameState.level}! Присоединяйся и получи бонус:`;
+            const shareLink = `https://t.me/culinaryempire_bot?start=ref_${userId}`;
+            
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`);
+            
+            gameState.coins += 500;
+            showToast('🎁 Ссылка отправлена! +500 🪙 за активность');
+            updateUI();
+            saveGame();
+            
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         });
     }
 
-    // Навигация по вкладкам
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.addEventListener('click', () => {
-            document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-        });
-    });
-
-    // Пассивный доход
-    // Игровой цикл: пассивный доход + восстановление энергии
+    // === 5. ИГРОВОЙ ЦИКЛ ===
     setInterval(() => {
         const now = Date.now();
-
-        // 1. Пассивный доход (раз в секунду)
         const income = getPassiveIncome();
         if (income > 0 && now - (gameState._lastPassiveIncome || 0) >= 1000) {
             gameState.coins += income;
             gameState._lastPassiveIncome = now;
         }
 
-        // 2. Восстановление энергии (1 ед. в секунду)
         if (gameState.energy >= gameState.maxEnergy) {
-            // Энергия полна — держим «якорь» актуальным,
-            // чтобы после первого тапа таймер показал честную 1.0с, а не 0.0с
             lastEnergyRegen = now;
         } else if (now - lastEnergyRegen >= 1000) {
             gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
             lastEnergyRegen = now;
             saveGame();
         }
-
-        // Обновляем UI каждый тик (для плавного таймера)
         updateUI();
     }, 100);
 
-    // Автосохранение
-    setInterval(saveGame, 10000);
-
     // Цикл заказов
     startOrdersLoop();
-
-    // Первый заказ через 2 секунды
     if (gameState.orders.length === 0) {
         setTimeout(() => generateOrder(), 2000);
     }
 
     window.addEventListener('beforeunload', saveGame);
-
-    console.log('✅ Игра инициализирована');
-
-    // --- Кнопка "Пригласить друга" ---
-    const shareBtn = document.getElementById('share-btn');
-    if (shareBtn) {
-        shareBtn.addEventListener('click', () => {
-            const userId = tg.initDataUnsafe?.user?.id || '0';
-            const userName = tg.initDataUnsafe?.user?.first_name || 'Друг';
-            
-            const shareText = `🍔 Я уже построил Кулинарную Империю уровня ${gameState.level}! Присоединяйся и получи бонус:`;
-            const shareLink = `https://t.me/culinaryempire_bot?start=ref_${userId}`;
-            
-            // Открываем нативное окно "Поделиться" в Telegram
-            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`);
-            
-            // Даём небольшой бонус за сам факт попытки приглашения (мотивация!)
-            gameState.coins += 500;
-            showToast('🎁 Ссылка отправлена! +500 🪙 за активность');
-            
-            updateUI();
-            saveGame();
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
-        });
-    }    
+    console.log('✅ Игра инициализирована (Чистый UI)');
 }
 
 if (document.readyState === 'loading') {
