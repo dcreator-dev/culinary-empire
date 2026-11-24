@@ -11,8 +11,15 @@ function updateKitchenVisuals(levelData) {
     const levelEl = document.getElementById('level');
     if (levelEl) levelEl.textContent = levelData.level;
 
-    const foodEl = document.querySelector('.placeholder-food');
-    if (foodEl) foodEl.textContent = levelData.food;
+    const foodContainer = document.querySelector('.placeholder-food');
+    if (foodContainer) {
+        const imgPath = KITCHEN_IMAGES[levelData.level];
+        if (imgPath) {
+            foodContainer.innerHTML = `<img src="${imgPath}" alt="${levelData.name}" class="food-img">`;
+        } else {
+            foodContainer.textContent = levelData.food; // fallback на эмодзи
+        }
+    }
 }
 
 function showLevelUpAnimation(oldLevel, newLevelData) {

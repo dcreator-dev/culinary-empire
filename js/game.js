@@ -38,6 +38,13 @@ const KITCHEN_LEVELS = [
     { level: 10, name: 'КУЛИНАРНАЯ СИНГУЛЯРНОСТЬ', food: '✨', repRequired: 25000 }
 ];
 
+// Карта картинок для уровней (путь или null если нет)
+const KITCHEN_IMAGES = {
+    1: 'assets/images/burger.png',
+    2: 'assets/images/pizza.png',  
+    3: 'assets/images/hotdog.png',
+};
+
 const SAVE_KEY = 'culinaryEmpireSave_v3';
 
 const defaultState = {
